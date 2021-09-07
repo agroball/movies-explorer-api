@@ -1,0 +1,11 @@
+{
+  "name": "movies-explorer-api",
+  "author": "Timakov Roman",
+  "scripts": {
+    "start": "node app.js",
+    "dev":  "nodemon app.js"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+  }
+}
