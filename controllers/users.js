@@ -1,7 +1,15 @@
+// NPM
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+// Models
 const User = require('../models/user');
+// ERRORS
+const AuthError = require('../errors/AuthError');
+const InvalidRequestError = require('../errors/InvalidRequestError');
+const MongoError = require('../errors/MongoError');
+const NotFoundError = require('../errors/NotFoundError');
 
+// контроллер создания User
 module.exports.createUser = (req, res, next) => {
   const { name, email, password } = req.body;
   bcrypt.hash(password, 10)
@@ -26,6 +34,7 @@ module.exports.createUser = (req, res, next) => {
     });
 };
 
+// Контроллер логина
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
@@ -44,11 +53,12 @@ module.exports.login = (req, res, next) => {
         .end();
     })
     .catch((err) => {
-      if (err.name === 'Error') next(new UnauthorizedError(UNAUTHORIZED_ERROR));
+      if (err.name === 'Error') next(new AuthError(UNAUTHORIZED_ERROR));
       next(err);
     });
 };
 
+// контроллер информации о пользователе
 module.exports.getUserMe = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
@@ -66,6 +76,7 @@ module.exports.getUserMe = (req, res, next) => {
     });
 };
 
+// контроллер редактирования профиля
 module.exports.updateProfile = (req, res, next) => {
   const { name, email } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, email }, { runValidators: true, new: true })
@@ -86,6 +97,7 @@ module.exports.updateProfile = (req, res, next) => {
     });
 };
 
+// контроллер выхода
 module.exports.signOut = (req, res) => {
   res.clearCookie('jwt').end();
 };

@@ -1,5 +1,11 @@
+// Models
 const Movie = require('../models/movie');
+//ERRORS
+const InvalidRequestError = require('../errors/InvalidRequestError');
+const ForbiddenError = require('../errors/ForbiddenError');
+const NotFoundError = require('../errors/NotFoundError');
 
+// Контроллер добавления фильма
 module.exports.addMovie = (req, res, next) => {
   const {
     country,
@@ -38,12 +44,14 @@ module.exports.addMovie = (req, res, next) => {
     });
 };
 
+// Контроллер фильмов
 module.exports.getMovies = (req, res, next) => {
   Movie.find({ owner: req.user._id })
     .then((movie) => res.status(200).send(movie))
     .catch(next);
 };
 
+// Контроллер удаления фильма
 module.exports.deleteMovie = (req, res, next) => {
   Movie.findById(req.params.movieId)
     .then((movie) => {
