@@ -8,6 +8,8 @@ const AuthError = require('../errors/AuthError');
 const InvalidRequestError = require('../errors/InvalidRequestError');
 const MongoError = require('../errors/MongoError');
 const NotFoundError = require('../errors/NotFoundError');
+// JWT
+const { JWT_SECRET } = require('../utils/ConfigEnv');
 
 // контроллер создания User
 module.exports.createUser = (req, res, next) => {
@@ -26,11 +28,50 @@ module.exports.createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
+        next(new InvalidRequestError('Переданы некорректные данные'));
       } else if (err.name === 'MongoError') {
-        next(new MongoError(MONGO_ERROR));
+        next(new MongoError('Пользователь с таким email уже существует'));
       }
       next(err);
+    });
+};
+
+// контроллер информации о пользователе
+module.exports.getUserMe = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Запрашиваемый пользователь не найден');
+      }
+      res.status(200).send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new InvalidRequestError('Переданы некорректные данные'));
+      } else {
+        next(err);
+      }
+    });
+};
+
+// контроллер редактирования профиля
+module.exports.updateProfile = (req, res, next) => {
+  const { name, email } = req.body;
+  User.findByIdAndUpdate(req.user._id, { name, email }, { runValidators: true, new: true })
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Запрашиваемый пользователь не найден');
+      }
+      res.status(200).send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
+        next(new InvalidRequestError('Переданы некорректные данные'));
+      } else if (err.name === 'MongoError') {
+        next(new MongoError('Пользователь с таким email уже существует'));
+      } else {
+        next(err);
+      }
     });
 };
 
@@ -53,47 +94,8 @@ module.exports.login = (req, res, next) => {
         .end();
     })
     .catch((err) => {
-      if (err.name === 'Error') next(new AuthError(UNAUTHORIZED_ERROR));
+      if (err.name === 'Error') next(new AuthError('Необходима авторизация'));
       next(err);
-    });
-};
-
-// контроллер информации о пользователе
-module.exports.getUserMe = (req, res, next) => {
-  User.findById(req.user._id)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError(NOT_FOUND_USER);
-      }
-      res.status(200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
-      } else {
-        next(err);
-      }
-    });
-};
-
-// контроллер редактирования профиля
-module.exports.updateProfile = (req, res, next) => {
-  const { name, email } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, email }, { runValidators: true, new: true })
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError(NOT_FOUND_USER);
-      }
-      res.status(200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
-      } else if (err.name === 'MongoError') {
-        next(new MongoError(MONGO_ERROR));
-      } else {
-        next(err);
-      }
     });
 };
 

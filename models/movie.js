@@ -27,7 +27,7 @@ const movieSchema = new mongoose.Schema({
       validator(url) {
         return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: LINK_ERROR,
+      message: 'Неверный формат ссылки',
     },
     required: true,
   },
@@ -37,7 +37,7 @@ const movieSchema = new mongoose.Schema({
       validator(url) {
         return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: LINK_ERROR,
+      message: 'Неверный формат ссылки',
     },
     required: true,
   },
@@ -47,7 +47,7 @@ const movieSchema = new mongoose.Schema({
       validator(url) {
         return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: LINK_ERROR,
+      message: 'Неверный формат ссылки',
     },
     required: true,
   },
