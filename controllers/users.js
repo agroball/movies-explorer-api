@@ -14,6 +14,7 @@ const { JWT_SECRET } = require('../utils/ConfigEnv');
 // контроллер создания User
 module.exports.createUser = (req, res, next) => {
   const { name, email, password } = req.body;
+
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name,
@@ -57,6 +58,7 @@ module.exports.getUserMe = (req, res, next) => {
 // контроллер редактирования профиля
 module.exports.updateProfile = (req, res, next) => {
   const { name, email } = req.body;
+
   User.findByIdAndUpdate(req.user._id, { name, email }, { runValidators: true, new: true })
     .then((user) => {
       if (!user) {
@@ -78,6 +80,7 @@ module.exports.updateProfile = (req, res, next) => {
 // Контроллер логина
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
+
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(

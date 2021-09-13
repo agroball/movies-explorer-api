@@ -27,6 +27,7 @@ module.exports.addMovie = (req, res, next) => {
     thumbnail,
     movieId,
   } = req.body;
+
   Movie.create({
     country,
     director,

@@ -32,10 +32,10 @@ module.exports.addMovieValidation = celebrate({
     description: Joi.string().required(),
     image: Joi.string().custom(urlValidation).required(),
     trailer: Joi.string().custom(urlValidation).required(),
-    thumbnail: Joi.string().custom(urlValidation).required(),
-    movieId: Joi.number().required(),
     nameRU: Joi.string().required(),
     nameEN: Joi.string().required(),
+    thumbnail: Joi.string().custom(urlValidation).required(),
+    movieId: Joi.number().required(),
   }),
 });
 

@@ -5,7 +5,7 @@ const user = require('./movies');
 // Controllers
 const { createUser, login, signOut } = require('../controllers/users');
 // Validation
-const { registerValidation, authValidation } = require('../middlewares/BodyValidation');
+const { registerValidation, authValidation } = require('../middlewares/Validation');
 // ERRORS
 const NotFoundError = require('../errors/NotFoundError');
 
