@@ -11,14 +11,6 @@ const { requestLogger, errorLogger } = require('./middlewares/logger');
 const { DATA_BASE, PORT } = require('./utils/ConfigEnv');
 
 const app = express();
-app.use(cors({
-  origin: ['https://agroball.diplom.nomoredomains.monster', 'http://localhost:3000'],
-  credentials: true,
-}));
-app.use(helmet());
-app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect(DATA_BASE, {
   useNewUrlParser: true,
@@ -26,6 +18,20 @@ mongoose.connect(DATA_BASE, {
   useUnifiedTopology: true,
   useFindAndModify: false,
 });
+
+app.use('*', cors({
+  origin: ['https://agroball.diplom.nomoredomains.monster', 'http://localhost:3000'],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization', 'authorization'],
+  credentials: true,
+}));
+app.use(helmet());
+app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(requestLogger);
 
 app.use('/', router);
