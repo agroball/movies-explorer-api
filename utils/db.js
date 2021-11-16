@@ -31,6 +31,8 @@ module.exports.movieIdNotFound = 'Фильм с указанным _id не на
 module.exports.corsOptions = {
   origin: [
     'https://agroball.diplom.nomoredomains.monster/',
+    'https://agroball.diplom.nomoredomains.monster/',
+    'http://localhost:3000',
   ],
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   preflightContinue: false,

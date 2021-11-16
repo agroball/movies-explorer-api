@@ -1,4 +1,4 @@
-const server = 'mongodb://localhost:27017/movies-explorer';
+const server = 'mongodb://localhost:27017/moviedb';
 
 module.exports = {
   server,
