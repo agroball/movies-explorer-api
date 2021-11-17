@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const auth = require('../middlewares/auth');
+const auth = require('../middlewares/Auth');
 const moviesRoute = require('./movies');
 const usersRoute = require('./users');
 const enterRoute = require('./sign');

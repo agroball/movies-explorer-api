@@ -34,9 +34,5 @@ module.exports.corsOptions = {
     'http://localhost:3000',
     'https://localhost:3000',
   ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  allowedHeaders: ['Content-Type', 'origin', 'Authorization', 'Access-Control-Allow-Credentials'],
   credentials: true,
 };
