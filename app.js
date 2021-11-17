@@ -12,7 +12,9 @@ const { DATA_BASE, PORT } = require('./utils/ConfigEnv');
 
 const app = express();
 app.use(cors({
-  origin: ['https://agroball.diplom.nomoredomains.monster'],
+  origin: ['https://agroball.diplom.nomoredomains.monster',
+    'http://agroball.diplom.nomoredomains.monster',
+  ],
   credentials: true,
 }));
 app.use(helmet());
