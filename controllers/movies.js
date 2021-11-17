@@ -1,22 +1,12 @@
 const Movie = require('../models/movie');
-const NotFoundError = require('../errors/not-found-err');
-const RequestError = require('../errors/request-err');
-const ForbiddenError = require('../errors/forbidden-err');
+const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
+const InvalidRequestError = require('../errors/InvalidRequestError');
 const {
-  IdNotValid,
-  movieCreateIncorrect,
-  deleteMovieForbid,
-  movieDeleted,
-  movieIdNotFound,
-} = require('../utils/db');
+  INVALID_REQUEST_ERROR, NOT_FOUND_MOVIE, FORBIDDEN_ERROR, SUCCESS,
+} = require('../utils/constans');
 
-module.exports.getMovies = (req, res, next) => {
-  Movie.find({})
-    .then((movies) => res.send(movies))
-    .catch(next);
-};
-
-module.exports.postMovie = (req, res, next) => {
+module.exports.addMovie = (req, res, next) => {
   const {
     country,
     director,
@@ -30,7 +20,6 @@ module.exports.postMovie = (req, res, next) => {
     thumbnail,
     movieId,
   } = req.body;
-  const owner = req.user._id;
   Movie.create({
     country,
     director,
@@ -43,38 +32,47 @@ module.exports.postMovie = (req, res, next) => {
     nameEN,
     thumbnail,
     movieId,
-    owner,
+    owner: req.user._id,
   })
-    .then((movie) => res.send(movie))
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        throw new RequestError(movieCreateIncorrect);
+    .then((movie) => res.status(200).send(movie))
+    .catch((err) => {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
+        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
+      } else {
+        next(err);
       }
-      next(error);
-    })
+    });
+};
+
+module.exports.getMovies = (req, res, next) => {
+  Movie.find({ owner: req.user._id })
+    .then((movie) => res.status(200).send(movie))
     .catch(next);
 };
 
 module.exports.deleteMovie = (req, res, next) => {
-  Movie.findById(req.params._id)
-    .orFail(new Error('NotValidId'))
+  Movie.findById(req.params.movieId)
     .then((movie) => {
-      const movieUserId = movie.owner.toString();
-      const UserId = req.user._id;
-      if (movieUserId !== UserId) {
-        throw new ForbiddenError(deleteMovieForbid);
+      if (!movie) {
+        throw new NotFoundError(NOT_FOUND_MOVIE);
+      } if (req.user._id !== movie.owner._id.toString()) {
+        throw new ForbiddenError(FORBIDDEN_ERROR);
       }
-      return movie.remove()
-        .then(() => res.send({ message: movieDeleted }));
+      Movie.findByIdAndDelete(movie)
+        .then(() => res.status(200).send({ message: SUCCESS }))
+        .catch((err) => {
+          if (err.name === 'CastError' || err.name === 'ValidationError') {
+            next(new InvalidRequestError(INVALID_REQUEST_ERROR));
+          } else {
+            next(err);
+          }
+        });
     })
-    .catch((error) => {
-      if (error.message === 'NotValidId') {
-        throw new NotFoundError(movieIdNotFound);
+    .catch((err) => {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
+        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
+      } else {
+        next(err);
       }
-      if (error.name === 'CastError') {
-        throw new RequestError(IdNotValid);
-      }
-      next(error);
-    })
-    .catch(next);
+    });
 };

@@ -1,43 +1,38 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const { errors } = require('celebrate');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const { errors } = require('celebrate');
-const routes = require('./routes/index');
-const errorsHandler = require('./middlewares/errorsHandler');
+const processingErrors = require('./middlewares/processingErrors');
+const router = require('./routes');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
-const { server } = require('./utils/config');
-const { corsOptions } = require('./utils/db');
-const limiter = require('./middlewares/limiter');
 
-const { PORT = 3000 } = process.env;
+const { limiter } = require('./middlewares/limiter');
+const { DATA_BASE, PORT } = require('./utils/configEnv');
+const { corsOptions } = require('./utils/constans');
+
 const app = express();
+app.use(cors(corsOptions));
+app.use(helmet());
+app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect(server, {
+mongoose.connect(DATA_BASE, {
   useNewUrlParser: true,
   useCreateIndex: true,
   useUnifiedTopology: true,
   useFindAndModify: false,
 });
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
+
 app.use(limiter);
-app.use(helmet());
-
-app.use(cors(corsOptions));
-
-app.use(cookieParser());
-
-app.use('/', routes);
-
+app.use('/', router);
 app.use(errorLogger);
-app.use(errors());
-app.use(errorsHandler);
 
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
-});
+app.use(errors());
+app.use(processingErrors);
+
+app.listen(PORT);

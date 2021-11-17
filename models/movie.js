@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const validator = require('validator');
-const { incorrectImageLinc, incorrectTrailerLinc, incorrectThumbnailLinc } = require('../utils/db');
+const { LINK_ERROR } = require('../utils/constans');
 
 const movieSchema = new mongoose.Schema({
   country: {
@@ -25,33 +24,33 @@ const movieSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
     validate: {
-      validator(image) {
-        return validator.isURL(image);
+      validator(url) {
+        return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: incorrectImageLinc,
+      message: LINK_ERROR,
     },
+    required: true,
   },
   trailer: {
     type: String,
-    required: true,
     validate: {
-      validator(trailer) {
-        return validator.isURL(trailer);
+      validator(url) {
+        return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: incorrectTrailerLinc,
+      message: LINK_ERROR,
     },
+    required: true,
   },
   thumbnail: {
     type: String,
-    required: true,
     validate: {
-      validator(thumbnail) {
-        return validator.isURL(thumbnail);
+      validator(url) {
+        return /(https?):\/\/\S{2,}\.\S{2,}/.test(url);
       },
-      message: incorrectThumbnailLinc,
+      message: LINK_ERROR,
     },
+    required: true,
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
