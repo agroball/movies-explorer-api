@@ -1,38 +1,42 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const { errors } = require('celebrate');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const processingErrors = require('./middlewares/processingErrors');
-const router = require('./routes');
+const { errors } = require('celebrate');
+const routes = require('./routes/index');
+const errorsHandler = require('./middlewares/errorsHandler');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const { corsOptions } = require('./utils/db');
+const limiter = require('./middlewares/limiter');
 
-const { limiter } = require('./middlewares/limiter');
-const { DATA_BASE, PORT } = require('./utils/configEnv');
-const { corsOptions } = require('./utils/constans');
-
+const { PORT = 3000 } = process.env;
 const app = express();
-app.use(cors(corsOptions));
-app.use(helmet());
-app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect(DATA_BASE, {
+mongoose.connect('mongodb://localhost:27017/moviedb', {
   useNewUrlParser: true,
-  useCreateIndex: true,
   useUnifiedTopology: true,
+  useCreateIndex: true,
   useFindAndModify: false,
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
-
 app.use(limiter);
-app.use('/', router);
+app.use(helmet());
+
+app.use(cors(corsOptions));
+
+app.use(cookieParser());
+
+app.use('/', routes);
+
 app.use(errorLogger);
-
 app.use(errors());
-app.use(processingErrors);
+app.use(errorsHandler);
 
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}`);
+});

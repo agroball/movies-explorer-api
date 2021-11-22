@@ -1,37 +1,88 @@
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const InvalidRequestError = require('../errors/InvalidRequestError');
-const MongoError = require('../errors/MongoError');
-const NotFoundError = require('../errors/NotFoundError');
-const UnauthorizedError = require('../errors/UnauthorizedError');
+const NotFoundError = require('../errors/not-found-err');
+const RequestError = require('../errors/request-err');
+const AutorizationError = require('../errors/authorization-err');
+const MongoError = require('../errors/mongo-err');
 const {
-  INVALID_REQUEST_ERROR, MONGO_ERROR, UNAUTHORIZED_ERROR, NOT_FOUND_USER,
-} = require('../utils/constans');
-const { JWT_SECRET } = require('../utils/configEnv');
+  userIdNotFound,
+  IdNotValid,
+  userIncorrect,
+  userAlreadyExist,
+  userCreateIncorrect,
+  userDublicateEmail,
+  errorUserorPassword,
+  userExit,
+} = require('../utils/db');
+
+const { NODE_ENV, JWT_SECRET } = process.env;
+
+module.exports.getLoggedUser = (req, res, next) => {
+  const id = req.user._id;
+  User.findById(id)
+    .orFail(new Error('NotValidId'))
+    .then((user) => res.send(user))
+    .catch((error) => {
+      if (error.message === 'NotValidId') {
+        throw new NotFoundError(userIdNotFound);
+      }
+      if (error.name === 'CastError') {
+        throw new RequestError(IdNotValid);
+      }
+      next(error);
+    })
+    .catch(next);
+};
 
 module.exports.createUser = (req, res, next) => {
-  const { name, email, password } = req.body;
+  const {
+    name, email, password,
+  } = req.body;
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
-      name,
-      email,
-      password: hash,
+      name, email, password: hash,
     }))
     .then((user) => {
-      res.status(200).send({
-        _id: user._id,
+      res.send({
+        name: user.name,
         email: user.email,
+        id: user._id,
       });
     })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
-      } else if (err.name === 'MongoError') {
-        next(new MongoError(MONGO_ERROR));
+    .catch((error) => {
+      if (error.name === 'ValidationError' || error.name === 'CastError') {
+        throw new RequestError(userIncorrect);
       }
-      next(err);
-    });
+      if (error.name === 'MongoError' && error.code === 11000) {
+        throw new MongoError(userAlreadyExist);
+      }
+      next(error);
+    })
+    .catch(next);
+};
+
+module.exports.patchUser = (req, res, next) => {
+  const { name, email } = req.body;
+  User.findByIdAndUpdate(req.user._id, { name, email }, { new: true, runValidators: true })
+    .orFail(new Error('NotValidId'))
+    .then((user) => res.send(user))
+    .catch((error) => {
+      if (error.message === 'NotValidId') {
+        throw new NotFoundError(userIdNotFound);
+      }
+      if (error.name === 'CastError') {
+        throw new RequestError(IdNotValid);
+      }
+      if (error.name === 'ValidationError') {
+        throw new RequestError(userCreateIncorrect);
+      }
+      if (error.codeName === 'DuplicateKey') {
+        throw new MongoError(userDublicateEmail);
+      }
+      next(error);
+    })
+    .catch(next);
 };
 
 module.exports.login = (req, res, next) => {
@@ -40,60 +91,17 @@ module.exports.login = (req, res, next) => {
     .then((user) => {
       const token = jwt.sign(
         { _id: user._id },
-        JWT_SECRET,
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
         { expiresIn: '7d' },
+
       );
-      res.cookie('jwt', `Bearer ${token}`, {
-        maxAge: 3600000,
-        secure: true,
-        httpOnly: true,
-        sameSite: 'None',
-      })
-        .end();
+      return res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true }).send({ token });
     })
-    .catch((err) => {
-      if (err.name === 'Error') next(new UnauthorizedError(UNAUTHORIZED_ERROR));
-      next(err);
-    });
-};
-
-module.exports.getUserMe = (req, res, next) => {
-  User.findById(req.user._id)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError(NOT_FOUND_USER);
-      }
-      res.status(200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
-      } else {
-        next(err);
-      }
-    });
-};
-
-module.exports.updateProfile = (req, res, next) => {
-  const { name, email } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, email }, { runValidators: true, new: true })
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError(NOT_FOUND_USER);
-      }
-      res.status(200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        next(new InvalidRequestError(INVALID_REQUEST_ERROR));
-      } else if (err.name === 'MongoError') {
-        next(new MongoError(MONGO_ERROR));
-      } else {
-        next(err);
-      }
+    .catch(() => {
+      next(new AutorizationError(errorUserorPassword));
     });
 };
 
 module.exports.signOut = (req, res) => {
-  res.clearCookie('jwt').end();
+  res.clearCookie('jwt').send({ message: userExit });
 };

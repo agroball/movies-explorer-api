@@ -1,9 +1,50 @@
-const movies = require('express').Router();
-const { addMovie, getMovies, deleteMovie } = require('../controllers/movies');
-const { addMovieValidation, deleteValidation } = require('../middlewares/bodyValidation');
+const router = require('express').Router();
+const validator = require('validator');
+const { celebrate, Joi } = require('celebrate');
+const {
+  getMovies, postMovie, deleteMovie,
+} = require('../controllers/movies');
+const { unvalidImage, unvalidTrailer, unvalidThumbnail } = require('../utils/db');
 
-movies.get('/movies', getMovies);
-movies.post('/movies', addMovieValidation, addMovie);
-movies.delete('/movies/:movieId', deleteValidation, deleteMovie);
+router.get('/', getMovies);
 
-module.exports = movies;
+router.post('/', celebrate({
+  body: Joi.object().keys({
+    country: Joi.string().required(),
+    director: Joi.string().required(),
+    duration: Joi.number().required(),
+    year: Joi.string().required(),
+    description: Joi.string().required(),
+    movieId: Joi.number().required(),
+    nameRU: Joi.string().required(),
+    nameEN: Joi.string().required(),
+    image: Joi.string().custom((value, helpers) => {
+      if (validator.isURL(value)) {
+        return value;
+      }
+      return helpers.message(unvalidImage);
+    }),
+    trailer: Joi.string().custom((value, helpers) => {
+      if (validator.isURL(value)) {
+        return value;
+      }
+      return helpers.message(unvalidTrailer);
+    }),
+    thumbnail: Joi.string().custom((value, helpers) => {
+      if (validator.isURL(value)) {
+        return value;
+      }
+      return helpers.message(unvalidThumbnail);
+    }),
+  }),
+}),
+postMovie);
+
+router.delete('/:_id', celebrate({
+  params: Joi.object().keys({
+    movieId: Joi.number(),
+  }).unknown(true),
+}),
+deleteMovie);
+
+module.exports = router;
