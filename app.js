@@ -15,6 +15,10 @@ app.use(cors({
   origin: ['https://agroball.diplom.nomoredomains.monster',
     'http://agroball.diplom.nomoredomains.monster',
   ],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization', 'Access-Control-Allow-Credentials'],
   credentials: true,
 }));
 app.use(helmet());
